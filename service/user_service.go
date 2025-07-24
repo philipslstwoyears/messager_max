@@ -15,14 +15,14 @@ func NewUserService(repo *repository.Storage) *UserService {
 	return &UserService{repo: repo}
 }
 
-func (s *UserService) RegisterUser(login, password string) error {
+func (s *UserService) RegisterUser(login, password string) (int, error) {
 	if len(password) < 6 {
-		return errors.New("password too short")
+		return 0, errors.New("password too short")
 	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	user := models.User{

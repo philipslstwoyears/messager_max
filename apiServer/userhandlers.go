@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"github.com/sirupsen/logrus"
 	"net/http"
+	"strconv"
+	"time"
 )
 
 type RegisterRequest struct {
@@ -30,12 +32,19 @@ func (handler *UserHandler) RegisterUser(w http.ResponseWriter, r *http.Request)
 		logrus.Error()
 		return
 	}
-	err = handler.service.RegisterUser(req.Login, req.Password)
+	id, err := handler.service.RegisterUser(req.Login, req.Password)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		logrus.Error()
 		return
 	}
+	http.SetCookie(w, &http.Cookie{
+		Name:     "id",
+		Value:    strconv.Itoa(id),
+		Expires:  time.Now().Add(24 * time.Hour),
+		Path:     "/",
+		HttpOnly: true,
+	})
 	w.WriteHeader(http.StatusCreated)
 	w.Write([]byte("user registered successfully"))
 }
