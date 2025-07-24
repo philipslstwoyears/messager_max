@@ -1,0 +1,11 @@
+bindAddr = ":8080"
+logLevel = "debug"
+
+
+[postgres]
+username = "postgres"
+host = "localhost"
+port = "5432"
+dbname = "postgres"
+sslmode = "disable"
+password = "1234"
