@@ -35,11 +35,13 @@ func New(config *configs.Config, storage *repository.Storage) (*ApiServer, error
 func (s *ApiServer) Start() error {
 	r := mux.NewRouter()
 
-	r.HandleFunc("/AddMessage", s.AddMessageHandler)
-	r.HandleFunc("/DeleteMessage", s.DeleteMessageHandler)
-	r.HandleFunc("/GetMessage", s.GetMessageHandler)
-	r.HandleFunc("/GetAllMessage", s.GetAllHandler)
-	r.HandleFunc("/register", s.user.RegisterUser).Methods("POST")
+	r.HandleFunc("/AddMessage", LogMidellware(RecoverMiddleware(AuthMiddleware(s.AddMessageHandler)))).Methods("POST")
+	r.HandleFunc("/DeleteMessage", LogMidellware(RecoverMiddleware(AuthMiddleware(s.DeleteMessageHandler)))).Methods("DELETE")
+	r.HandleFunc("/GetMessage", LogMidellware(RecoverMiddleware(s.GetMessageHandler))).Methods("GET")
+	r.HandleFunc("/GetAllRecieaved", LogMidellware(RecoverMiddleware(AuthMiddleware(s.GetAllHandlerRecieaved)))).Methods("GET")
+	r.HandleFunc("/GetAllSend", LogMidellware(RecoverMiddleware(AuthMiddleware(s.GetAllHandlerSend)))).Methods("GET")
+	r.HandleFunc("/register", LogMidellware(RecoverMiddleware(s.user.RegisterUser))).Methods("POST")
+	r.HandleFunc("/login", LogMidellware(RecoverMiddleware(s.user.LoginUser))).Methods("POST")
 	s.logger.Info("Starting API Server")
 
 	return http.ListenAndServe(s.config.BindAddr, r)

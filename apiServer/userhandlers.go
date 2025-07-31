@@ -14,6 +14,11 @@ type RegisterRequest struct {
 	Password string `json:"password"`
 }
 
+type LoginRequest struct {
+	Login    string `json:"login"`
+	Password string `json:"password"`
+}
+
 type UserHandler struct {
 	service *service.UserService
 }
@@ -48,3 +53,26 @@ func (handler *UserHandler) RegisterUser(w http.ResponseWriter, r *http.Request)
 	w.WriteHeader(http.StatusCreated)
 	w.Write([]byte("user registered successfully"))
 }
+
+func (handler *UserHandler) LoginUser(w http.ResponseWriter, r *http.Request) {
+	var req LoginRequest
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		logrus.Error()
+		return
+	}
+	err = handler.service.LoginUser(req.Login, req.Password)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		logrus.Error()
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("Login successful"))
+}
+
+// TODO: сделать ручку логин
+// TODO: добавить мидлвары (паника, логирующая, авторизация)
+// TODO: отредактировать ручки сообщений
+// TODO: все проверить

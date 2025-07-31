@@ -12,8 +12,10 @@ func (s *ApiServer) AddMessageHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid request", http.StatusBadRequest)
 		return
 	}
+	senderId := r.Context().Value("KeyUserID").(int)
+	msg.SenderID = senderId
 	if err := msg.Valid(); err != nil {
-		http.Error(w, "Invalid request", http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	id, err := s.storage.AddMessage(msg)
@@ -39,8 +41,25 @@ func (s *ApiServer) GetMessageHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(res)
 }
 
-func (s *ApiServer) GetAllHandler(w http.ResponseWriter, r *http.Request) {
-	messages := s.storage.GetAll()
+func (s *ApiServer) GetAllHandlerSend(w http.ResponseWriter, r *http.Request) {
+	userId := r.Context().Value("KeyUserID").(int)
+	messages, err := s.storage.GetAllSend(userId)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(messages)
+}
+
+func (s *ApiServer) GetAllHandlerRecieaved(w http.ResponseWriter, r *http.Request) {
+	userId := r.Context().Value("KeyUserID").(int)
+	messages, err := s.storage.GetAllRecieaved(userId)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(messages)
@@ -52,7 +71,11 @@ func (s *ApiServer) DeleteMessageHandler(w http.ResponseWriter, r *http.Request)
 		http.Error(w, "Invalid request", http.StatusBadRequest)
 		return
 	}
-	s.storage.DeleteMessage(msg.ID)
+	err := s.storage.DeleteMessage(msg.ID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 }

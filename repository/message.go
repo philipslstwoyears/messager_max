@@ -46,37 +46,50 @@ func (s *Storage) GetMessage(id int) (models.Message, bool) {
 
 }
 
-func (s *Storage) GetAll() []models.Message {
-	rows, err := s.Db.Query("SELECT id, receiver, content, sender, created_at FROM messages")
+func (s *Storage) GetAllSend(sender int) ([]models.Message, error) {
+	rows, err := s.Db.Query("SELECT id, receiver, content, sender, created_at FROM messages WHERE sender = $1", sender)
 	if err != nil {
-		return []models.Message{}
+		return []models.Message{}, err
 	}
 	defer rows.Close()
 	messages := []models.Message{}
 	for rows.Next() {
 		var m models.Message
 		if err := rows.Scan(&m.ID, &m.ReceiverID, &m.Content, &m.SenderID, &m.CreatedAt); err != nil {
-			return []models.Message{}
+			return []models.Message{}, err
 		}
 		messages = append(messages, m)
 	}
 	if rows.Err() != nil {
-		return []models.Message{}
+		return []models.Message{}, err
 	}
-	return messages
+	return messages, nil
+}
+
+func (s *Storage) GetAllRecieaved(receiver int) ([]models.Message, error) {
+	rows, err := s.Db.Query("SELECT id, receiver, content, sender, created_at FROM messages WHERE receiver = $1", receiver)
+	if err != nil {
+		return []models.Message{}, err
+	}
+	defer rows.Close()
+	messages := []models.Message{}
+	for rows.Next() {
+		var m models.Message
+		if err := rows.Scan(&m.ID, &m.ReceiverID, &m.Content, &m.SenderID, &m.CreatedAt); err != nil {
+			return []models.Message{}, err
+		}
+		messages = append(messages, m)
+	}
+	if rows.Err() != nil {
+		return []models.Message{}, err
+	}
+	return messages, nil
 }
 
 func (s *Storage) DeleteMessage(id int) error {
-	result, err := s.Db.Exec("DELETE FROM messages WHERE id = ?", id)
+	_, err := s.Db.Exec("DELETE FROM messages WHERE id = $1", id)
 	if err != nil {
 		return err
-	}
-	rows, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if rows == 0 {
-		return errors.New("message not found")
 	}
 	return nil
 }

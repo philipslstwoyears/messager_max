@@ -11,3 +11,11 @@ func (s *Storage) SaveUser(user models.User) (int, error) {
 	err := res.Scan(&id)
 	return id, err
 }
+
+func (s *Storage) GetUserByLogin(login string) (models.User, error) {
+	var user models.User
+	query := `SELECT id, login, password FROM users WHERE login = $1`
+	row := s.Db.QueryRow(query, login)
+	err := row.Scan(&user.ID, &user.Login, &user.Password)
+	return user, err
+}

@@ -32,3 +32,21 @@ func (s *UserService) RegisterUser(login, password string) (int, error) {
 
 	return s.repo.SaveUser(user)
 }
+
+func CheckPasswordHash(password, hash string) bool {
+	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
+	return err == nil
+}
+
+func (s *UserService) LoginUser(login, password string) error {
+	user, err := s.repo.GetUserByLogin(login)
+	if err != nil {
+		return errors.New("user not found")
+	}
+
+	if !CheckPasswordHash(password, user.Password) {
+		return errors.New("invalid password")
+	}
+
+	return nil
+}
